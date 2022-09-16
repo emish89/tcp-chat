@@ -1,5 +1,6 @@
 import { Socket } from 'net';
-import { createGuest, removeSocket, sendMessage, serverConnectionListener } from '.';
+import { createGuest, isValidArray, manageDataBuffer, removeSocket, sendMessage, serverConnectionListener } from '.';
+import { answer } from './q3';
 import { SocketEnrichedType } from './types';
 
 describe('tcp chat', () => {
@@ -73,5 +74,63 @@ describe('tcp chat', () => {
     socket.nickName = 'guest-2';
     const sockets = [new Socket() as SocketEnrichedType];
     expect(removeSocket(socket, sockets).length).toBe(1);
+  });
+
+  it('should test isValidArray with a valid array ', () => {
+    expect(isValidArray('[1,2,3]')).toBeTruthy();
+  });
+
+  it('should test isValidArray with a not valid array ', () => {
+    expect(isValidArray('{[1,2,3]}')).toBeFalsy();
+  });
+
+  it('should test isValidArray with a normal obj ', () => {
+    expect(isValidArray('{}')).toBeFalsy();
+  });
+
+  it('should test isValidArray with a string', () => {
+    expect(isValidArray('1,2,3')).toBeFalsy();
+  });
+
+  it('should test manageDataBuffer case standard message', () => {
+    const socket = new Socket() as SocketEnrichedType;
+    socket.write = jest.fn();
+    const data = Buffer.from('Hello');
+    manageDataBuffer(data, socket);
+    expect(socket.write).not.toBeCalled();
+  });
+
+  it('should test manageDataBuffer case exit', () => {
+    const socket = new Socket() as SocketEnrichedType;
+    socket.end = jest.fn();
+    const data = Buffer.from('exit');
+    manageDataBuffer(data, socket);
+    expect(socket.end).toHaveBeenCalled();
+  });
+
+  it('should test manageDataBuffer case whoami', () => {
+    const socket = new Socket() as SocketEnrichedType;
+    socket.write = jest.fn();
+    const nickName = 'guest-1';
+    socket.nickName = nickName;
+    const data = Buffer.from('whoami');
+    manageDataBuffer(data, socket);
+    expect(socket.write).toHaveBeenCalledWith(`You are ${nickName}\n`);
+  });
+
+  it('should test manageDataBuffer case give me the answer', () => {
+    const socket = new Socket() as SocketEnrichedType;
+    socket.write = jest.fn();
+    const data = Buffer.from('give me the answer');
+    manageDataBuffer(data, socket);
+    expect(socket.write).toHaveBeenCalledWith(answer);
+  });
+
+  it('should test manageDataBuffer case help', () => {
+    const socket = new Socket() as SocketEnrichedType;
+    socket.write = jest.fn();
+    const data = Buffer.from('help');
+    manageDataBuffer(data, socket);
+    expect(socket.write).toHaveBeenCalled();
   });
 });

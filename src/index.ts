@@ -1,5 +1,7 @@
 import { createServer, Socket } from 'net';
+import { answer } from './q3';
 import { SocketEnrichedType } from './types';
+import { flatArray } from './utilities';
 
 let sockets: SocketEnrichedType[] = [];
 const port = 10000;
@@ -32,6 +34,40 @@ export const removeSocket: (socket: SocketEnrichedType, socketsArray: SocketEnri
   socketsArray: SocketEnrichedType[],
 ) => (socket?.nickName ? socketsArray?.filter((s) => s.nickName !== socket?.nickName) : socketsArray);
 
+//check if a message in the buffer is a valid array
+export const isValidArray = (s: string) => {
+  try {
+    return Array.isArray(JSON.parse(s));
+  } catch (e) {
+    return false;
+  }
+};
+
+//manage message from the buffer
+export const manageDataBuffer = (data: Buffer, socketEnriched: SocketEnrichedType) => {
+  const nickName = socketEnriched.nickName;
+  const message = data.toString().trim();
+
+  //a lot of if else to manage all the cases, depending from the number of cases can be improved
+  if (message === 'exit') {
+    socketEnriched.end();
+  } else if (message === 'whoami') {
+    socketEnriched.write(`You are ${nickName}\n`);
+  } else if (message === 'give me the answer') {
+    socketEnriched.write(answer);
+  } else if (isValidArray(message)) {
+    const array = JSON.parse(message);
+    const flattenedArray = flatArray(array);
+    socketEnriched.write(`The flat array is ${JSON.stringify(flattenedArray)}\n`);
+  } else if (message === 'help') {
+    socketEnriched.write(
+      'Available commands: "exit", "whoami", "give me the answer" or send an array to have it flattened \n',
+    );
+  } else {
+    sendMessage(nickName, `${nickName}> ${message}\n`, sockets);
+  }
+};
+
 //handle new server connection
 export const serverConnectionListener = (socket: Socket) => {
   const socketEnriched = createGuest(socket, guestId);
@@ -41,10 +77,9 @@ export const serverConnectionListener = (socket: Socket) => {
   sendMessage(nickName, `${nickName} joined this chat.\n`, sockets);
 
   socketEnriched.on('data', (data: Buffer) => {
-    sendMessage(nickName, `${nickName}> ${data.toString()}`, sockets);
+    manageDataBuffer(data, socketEnriched);
   });
   socketEnriched.on('end', () => {
-    console.log('here');
     sockets = removeSocket(socketEnriched, sockets);
     const nickName = socketEnriched.nickName;
     sendMessage(nickName, `${nickName} left this chat\n`, sockets);
