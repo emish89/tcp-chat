@@ -12,7 +12,7 @@ clients connect with "telnet" and write single lines of text. On each new line o
 
 ### To run tests:
 
-      $ npm test
+      $ npm run test
 
 ### To build and start for production:
 
@@ -28,7 +28,7 @@ clients connect with "telnet" and write single lines of text. On each new line o
 ### Commands available in the chat:
 
     $ help                              - list all commands
-    $ whoami                         - return my username
-    $ exit                               - disconnect from the server
-    $ give me the answer       - return the answer to question 3
-    $ array                            - return the flattened array
+    $ whoami                            - return my username
+    $ exit                              - disconnect from the server
+    $ give me the answer                - return the answer to question 3
+    $ [1,2,[3]]       (any array)       - return the flattened array
